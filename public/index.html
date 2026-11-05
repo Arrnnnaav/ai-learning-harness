@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AI Learning Harness</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>AI Learning Harness</h1>
+  <p class="tagline">Your own AI study-plan generator. Bring your own API key.</p>
+</header>
+
+<main>
+  <section id="settings-section">
+    <h2>Settings</h2>
+    <form id="settings-form">
+      <label>Provider
+        <select id="provider">
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+        </select>
+      </label>
+      <label>Model <small>(optional, provider default used if blank)</small>
+        <input id="model" type="text" placeholder="e.g. gpt-4o-mini" />
+      </label>
+      <label>API Key
+        <input id="apiKey" type="password" placeholder="sk-..." />
+      </label>
+      <button type="submit">Save</button>
+      <button type="button" id="oauth-btn" disabled title="Requires an OpenAI OAuth app registration — see README">
+        Sign in with OpenAI (coming soon)
+      </button>
+      <p id="settings-status"></p>
+    </form>
+  </section>
+
+  <section id="topics-section">
+    <h2>Topics</h2>
+    <form id="topic-form">
+      <input id="topic-title" type="text" placeholder="Topic, e.g. Transformers" required />
+      <input id="topic-context" type="text" placeholder="Context (optional)" />
+      <button type="submit">Add</button>
+    </form>
+    <ul id="topic-list"></ul>
+  </section>
+
+  <section id="goals-section">
+    <h2>Goals</h2>
+    <form id="goal-form">
+      <input id="goal-label" type="text" placeholder="e.g. Land an ML internship" required />
+      <button type="submit">Add</button>
+    </form>
+    <ul id="goal-list"></ul>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
