@@ -40,11 +40,16 @@
     },
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.education"
+      "category": "public.app-category.education",
+      "arch": ["x64", "arm64"]
     },
     "linux": {
       "target": "AppImage",
       "category": "Education"
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
     }
   }
 }
