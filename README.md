@@ -33,7 +33,19 @@ the key you provide.
 - Runs as a desktop app (Electron) or headless (`npm run server`) if you just want the
   API.
 
-## Quick start
+## Download (no coding required)
+
+Grab an installer from [the latest release](https://github.com/Arrnnnaav/ai-learning-harness/releases/latest):
+Windows `.exe`, macOS `.dmg`, or Linux `.AppImage`. Install it, open it, paste an API
+key in Settings when prompted, add a topic.
+
+You need your own key: free to create at
+[platform.openai.com/api-keys](https://platform.openai.com/api-keys) or
+[console.anthropic.com](https://console.anthropic.com/settings/keys) (both require
+adding a small amount of billing credit to actually make calls — a few cents covers a
+lot of study docs).
+
+## Run from source
 
 ```bash
 git clone https://github.com/Arrnnnaav/ai-learning-harness.git
@@ -42,6 +54,8 @@ npm install
 npm start          # desktop app
 # or
 npm run server      # just the server at http://localhost:4100
+# or
+npm run dist        # build an installer for your own OS into release/
 ```
 
 Open Settings in the app, pick a provider, paste your API key, save. Add a topic, hit

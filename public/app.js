@@ -11,6 +11,7 @@ async function loadSettings() {
   const bits = [s.hasKey ? 'API key saved' : 'No API key set yet'];
   bits.push(s.hasYoutubeKey ? 'YouTube key saved (real video links on)' : 'No YouTube key (video sections will be search queries)');
   document.getElementById('settings-status').textContent = bits.join(' · ');
+  document.getElementById('welcome-banner').classList.toggle('hidden', s.hasKey);
 }
 
 document.getElementById('settings-form').addEventListener('submit', async (e) => {
@@ -67,6 +68,10 @@ async function loadJobs() {
   const { jobs } = await api('/api/jobs');
   const list = document.getElementById('job-list');
   list.innerHTML = '';
+  if (jobs.length === 0) {
+    list.innerHTML = '<li class="empty">No jobs yet — paste a posting above and save a base résumé to tailor against it.</li>';
+    return;
+  }
   jobs.forEach((j) => list.appendChild(jobRow(j)));
 }
 
@@ -121,6 +126,10 @@ async function loadTopics() {
   const { topics } = await api('/api/plan');
   const list = document.getElementById('topic-list');
   list.innerHTML = '';
+  if (topics.length === 0) {
+    list.innerHTML = '<li class="empty">No topics yet — add one above to generate your first study doc.</li>';
+    return;
+  }
   topics.forEach((t) => list.appendChild(topicRow(t)));
 }
 
@@ -170,6 +179,10 @@ async function loadGoals() {
   const { goals } = await api('/api/goals');
   const list = document.getElementById('goal-list');
   list.innerHTML = '';
+  if (goals.length === 0) {
+    list.innerHTML = '<li class="empty">No goals yet.</li>';
+    return;
+  }
   goals.forEach((g) => list.appendChild(goalRow(g)));
 }
 
