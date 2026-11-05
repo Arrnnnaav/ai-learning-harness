@@ -14,6 +14,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
 // --- settings (API key never echoed back) ---
 app.get('/api/settings', (req, res) => {
   const s = readJSON('settings.json', { provider: 'openai', model: '' });

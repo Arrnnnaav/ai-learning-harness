@@ -61,6 +61,26 @@ npm run dist        # build an installer for your own OS into release/
 Open Settings in the app, pick a provider, paste your API key, save. Add a topic, hit
 **Generate doc**.
 
+## Deploy as a server
+
+For a shared school computer, Chromebook, or your own VPS — run it headless instead of
+as a desktop app. It's a single-user instance (one plan, one résumé, one settings file)
+meant for one student per deployment, not a multi-tenant service.
+
+**Docker:**
+
+```bash
+docker build -t ai-learning-harness .
+docker run -p 4100:4100 -v ai-learning-harness-data:/root/.ai-learning-harness ai-learning-harness
+```
+
+The volume keeps your plan/résumé/settings across container restarts. Health check at
+`/api/health`.
+
+**One-click Render deploy:** push a fork, connect it at
+[render.com/deploy](https://render.com/deploy) — `render.yaml` in this repo configures
+it (Docker runtime, free plan, health check wired up).
+
 ## Auth
 
 v1 ships with bring-your-own-API-key — it works today, no backend needed. A "Sign in
