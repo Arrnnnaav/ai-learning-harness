@@ -27,6 +27,9 @@
       <label>API Key
         <input id="apiKey" type="password" placeholder="sk-..." />
       </label>
+      <label>YouTube API Key <small>(optional — real video links instead of search queries)</small>
+        <input id="youtubeApiKey" type="password" placeholder="AIza..." />
+      </label>
       <button type="submit">Save</button>
       <button type="button" id="oauth-btn" disabled title="Requires an OpenAI OAuth app registration — see README">
         Sign in with OpenAI (coming soon)
@@ -43,6 +46,27 @@
       <button type="submit">Add</button>
     </form>
     <ul id="topic-list"></ul>
+  </section>
+
+  <section id="resume-section">
+    <h2>Base Résumé</h2>
+    <p class="hint">Paste your real résumé text. Tailoring only ever rephrases/reorders what's here — it won't invent jobs or metrics.</p>
+    <textarea id="resume-base" rows="8" placeholder="Paste your résumé text here..."></textarea>
+    <button type="button" id="resume-save">Save résumé</button>
+    <span id="resume-status"></span>
+  </section>
+
+  <section id="jobs-section">
+    <h2>Jobs / Internships</h2>
+    <p class="hint">Paste postings manually — this tool doesn't scrape job boards.</p>
+    <form id="job-form">
+      <input id="job-company" type="text" placeholder="Company" />
+      <input id="job-title" type="text" placeholder="Title" required />
+      <input id="job-url" type="text" placeholder="Posting URL (optional)" />
+      <textarea id="job-description" rows="4" placeholder="Paste the job description" required></textarea>
+      <button type="submit">Add job</button>
+    </form>
+    <ul id="job-list"></ul>
   </section>
 
   <section id="goals-section">

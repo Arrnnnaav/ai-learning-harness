@@ -8,7 +8,9 @@ async function loadSettings() {
   const s = await api('/api/settings');
   document.getElementById('provider').value = s.provider;
   document.getElementById('model').value = s.model || '';
-  document.getElementById('settings-status').textContent = s.hasKey ? 'API key saved.' : 'No API key set yet.';
+  const bits = [s.hasKey ? 'API key saved' : 'No API key set yet'];
+  bits.push(s.hasYoutubeKey ? 'YouTube key saved (real video links on)' : 'No YouTube key (video sections will be search queries)');
+  document.getElementById('settings-status').textContent = bits.join(' · ');
 }
 
 document.getElementById('settings-form').addEventListener('submit', async (e) => {
@@ -16,13 +18,90 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
   const provider = document.getElementById('provider').value;
   const model = document.getElementById('model').value;
   const apiKey = document.getElementById('apiKey').value;
+  const youtubeApiKey = document.getElementById('youtubeApiKey').value;
   await api('/api/settings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ provider, model, ...(apiKey ? { apiKey } : {}) }),
+    body: JSON.stringify({
+      provider, model,
+      ...(apiKey ? { apiKey } : {}),
+      ...(youtubeApiKey ? { youtubeApiKey } : {}),
+    }),
   });
   document.getElementById('apiKey').value = '';
+  document.getElementById('youtubeApiKey').value = '';
   loadSettings();
+});
+
+// --- résumé ---
+async function loadResumeBase() {
+  const { text } = await api('/api/resume/base');
+  document.getElementById('resume-base').value = text || '';
+}
+
+document.getElementById('resume-save').addEventListener('click', async () => {
+  const text = document.getElementById('resume-base').value;
+  await api('/api/resume/base', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  document.getElementById('resume-status').textContent = 'Saved.';
+  setTimeout(() => { document.getElementById('resume-status').textContent = ''; }, 2000);
+});
+
+// --- jobs ---
+function jobRow(j) {
+  const li = document.createElement('li');
+  li.className = 'topic-row';
+  li.innerHTML = `
+    <span class="topic-title">${j.title}${j.company ? ` · ${j.company}` : ''}</span>
+    <button data-action="tailor" data-id="${j.id}">${j.tailoredSlug ? 'Re-tailor résumé' : 'Tailor résumé'}</button>
+    ${j.tailoredSlug ? `<a href="/api/resumes/${j.tailoredSlug}.docx" download>Download .docx</a>` : ''}
+    <button data-action="delete-job" data-id="${j.id}">Delete</button>
+  `;
+  return li;
+}
+
+async function loadJobs() {
+  const { jobs } = await api('/api/jobs');
+  const list = document.getElementById('job-list');
+  list.innerHTML = '';
+  jobs.forEach((j) => list.appendChild(jobRow(j)));
+}
+
+document.getElementById('job-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const company = document.getElementById('job-company').value;
+  const title = document.getElementById('job-title').value;
+  const url = document.getElementById('job-url').value;
+  const description = document.getElementById('job-description').value;
+  await api('/api/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ company, title, url, description }),
+  });
+  e.target.reset();
+  loadJobs();
+});
+
+document.getElementById('job-list').addEventListener('click', async (e) => {
+  const id = e.target.dataset.id;
+  if (!id) return;
+  if (e.target.dataset.action === 'delete-job') {
+    await api(`/api/jobs/${id}`, { method: 'DELETE' });
+    loadJobs();
+  }
+  if (e.target.dataset.action === 'tailor') {
+    e.target.disabled = true;
+    e.target.textContent = 'Tailoring…';
+    try {
+      await api(`/api/jobs/${id}/tailor`, { method: 'POST' });
+    } catch (err) {
+      alert(err.message);
+    }
+    loadJobs();
+  }
 });
 
 function topicRow(t) {
@@ -117,4 +196,6 @@ document.getElementById('goal-list').addEventListener('change', async (e) => {
 
 loadSettings();
 loadTopics();
+loadResumeBase();
+loadJobs();
 loadGoals();

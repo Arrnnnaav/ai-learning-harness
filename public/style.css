@@ -6,7 +6,9 @@ section { background: #171a21; border: 1px solid #2a2e37; border-radius: 10px; p
 h2 { margin-top: 0; font-size: 1.1rem; }
 form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 label { display: flex; flex-direction: column; font-size: .85rem; gap: 4px; }
-input, select { background: #0f1115; border: 1px solid #2a2e37; color: #e6e6e6; border-radius: 6px; padding: 6px 8px; }
+input, select, textarea { background: #0f1115; border: 1px solid #2a2e37; color: #e6e6e6; border-radius: 6px; padding: 6px 8px; font-family: inherit; }
+textarea { width: 100%; resize: vertical; }
+.hint { color: #9aa0a6; font-size: .85rem; margin-top: -4px; }
 button { background: #3b82f6; border: none; color: white; border-radius: 6px; padding: 7px 14px; cursor: pointer; }
 button:disabled { opacity: .5; cursor: not-allowed; }
 ul { list-style: none; padding: 0; margin: 12px 0 0; }

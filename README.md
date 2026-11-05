@@ -17,10 +17,19 @@ the key you provide.
 ## Features
 
 - **Topics** — add any topic, generate a full study doc for it (concepts + code +
-  project ideas + checklist), download as `.docx`.
+  project ideas + checklist), download as `.docx`. With a YouTube API key set, the
+  "Where to Watch" section links real, verified videos instead of search queries.
+- **Résumé tailoring** — paste your real résumé once, paste a job description, get a
+  tailored résumé + honest fit/gap notes, as `.docx`. The model only reorders/rephrases
+  what's in your base résumé — it's instructed never to invent employers, titles, or
+  metrics.
+- **Jobs / Internships** — a manual paste-in tracker for postings you're applying to.
+  Deliberately **not** a scraper: hitting LinkedIn/Indeed/etc. without an API violates
+  their ToS and breaks constantly. Paste the posting, tailor against it.
 - **Goals** — a flat checklist for longer-term goals.
-- **Bring your own key** — OpenAI or Anthropic, stored locally only, never sent
-  anywhere but that provider.
+- **Bring your own key** — OpenAI/Anthropic for generation, optional YouTube Data API
+  key for real video links. All stored locally only, never sent anywhere but that
+  provider.
 - Runs as a desktop app (Electron) or headless (`npm run server`) if you just want the
   API.
 
@@ -57,8 +66,10 @@ PRs welcome once that's in place.
 ```
 server.js        Express API + static file server
 main.js           Electron entry point
-lib/llm.js        OpenAI / Anthropic chat-completion client
+lib/llm.js         OpenAI / Anthropic chat-completion client
 lib/docgen.js      Study-doc prompt + generation
+lib/youtube.js     YouTube Data API search, resolves video-search-query lines to real links
+lib/resume.js      Résumé tailoring prompt (grounded in the user's own base résumé)
 lib/mdToDocx.js    Markdown -> .docx (no Python/Pandoc dependency)
 lib/store.js       Local JSON persistence (Electron userData or ~/.ai-learning-harness)
 public/            Frontend (vanilla JS, no build step)
