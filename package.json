@@ -39,9 +39,8 @@
       "target": "nsis"
     },
     "mac": {
-      "target": "dmg",
-      "category": "public.app-category.education",
-      "arch": ["x64", "arm64"]
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "category": "public.app-category.education"
     },
     "linux": {
       "target": "AppImage",
