@@ -30,8 +30,11 @@ the key you provide.
 - **Research mode** (on by default in Ask) — grounds the answer in a few live web
   sources with numbered `[1]` citations, instead of the model answering from memory
   alone. Uses Tavily if you add a key, otherwise falls back to a free DuckDuckGo search
-  — zero keys required to get cited answers. Ported from a local "Spatial" point-and-ask
-  project's research pipeline.
+  — zero keys required to get cited answers on a typical home connection. DuckDuckGo
+  CAPTCHA-walls datacenter IPs (cloud VPS, CI), so on a server deploy (see below) add a
+  [Tavily](https://tavily.com) key for reliable results — without one, Research mode
+  there just degrades to "no sources found, answered from topic context" instead of
+  throwing. Ported from a local "Spatial" point-and-ask project's research pipeline.
 - **Résumé tailoring** — paste your real résumé once, paste a job description, get a
   tailored résumé + honest fit/gap notes, as `.docx`. The model only reorders/rephrases
   what's in your base résumé — it's instructed never to invent employers, titles, or
