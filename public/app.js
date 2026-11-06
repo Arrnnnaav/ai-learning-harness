@@ -4,27 +4,56 @@ const api = (url, opts) => fetch(url, opts).then(async (r) => {
   return data;
 });
 
+function updateProviderFields() {
+  const isOllama = document.getElementById('provider').value === 'ollama';
+  document.getElementById('ollamaHost-field').classList.toggle('hidden', !isOllama);
+  document.getElementById('apiKey-field').classList.toggle('hidden', isOllama);
+}
+document.getElementById('provider').addEventListener('change', updateProviderFields);
+
+async function checkOllama() {
+  const el = document.getElementById('ollama-status');
+  if (document.getElementById('provider').value !== 'ollama') { el.classList.add('hidden'); return false; }
+  el.classList.remove('hidden');
+  el.textContent = 'Checking Ollama…';
+  try {
+    const { reachable, models } = await api('/api/ollama/health');
+    el.textContent = reachable
+      ? `Ollama is running. Models: ${models.length ? models.join(', ') : 'none pulled yet — run e.g. "ollama pull qwen3:4b-instruct"'}`
+      : "Can't reach Ollama. Install it from ollama.com and make sure it's running.";
+    return reachable;
+  } catch {
+    el.textContent = "Can't reach Ollama. Install it from ollama.com and make sure it's running.";
+    return false;
+  }
+}
+
 async function loadSettings() {
   const s = await api('/api/settings');
   document.getElementById('provider').value = s.provider;
   document.getElementById('model').value = s.model || '';
+  document.getElementById('ollamaHost').value = s.ollamaHost || '';
+  updateProviderFields();
   const bits = [s.hasKey ? 'API key saved' : 'No API key set yet'];
   bits.push(s.hasYoutubeKey ? 'YouTube key saved (real video links on)' : 'No YouTube key (video sections will be search queries)');
   document.getElementById('settings-status').textContent = bits.join(' · ');
-  document.getElementById('welcome-banner').classList.toggle('hidden', s.hasKey);
+
+  const ollamaOk = s.provider === 'ollama' ? await checkOllama() : false;
+  document.getElementById('welcome-banner').classList.toggle('hidden', s.hasKey || ollamaOk);
 }
 
 document.getElementById('settings-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const provider = document.getElementById('provider').value;
   const model = document.getElementById('model').value;
+  const ollamaHost = document.getElementById('ollamaHost').value;
   const apiKey = document.getElementById('apiKey').value;
   const youtubeApiKey = document.getElementById('youtubeApiKey').value;
   await api('/api/settings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      provider, model,
+      provider, model, ollamaHost,
       ...(apiKey ? { apiKey } : {}),
       ...(youtubeApiKey ? { youtubeApiKey } : {}),
     }),

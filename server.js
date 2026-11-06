@@ -15,30 +15,47 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const needsKey = (settings) => settings.provider !== 'ollama' && !settings.apiKey;
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // --- settings (API key never echoed back) ---
 app.get('/api/settings', (req, res) => {
-  const s = readJSON('settings.json', { provider: 'openai', model: '' });
+  const s = readJSON('settings.json', { provider: 'ollama', model: '' });
   res.json({
     provider: s.provider,
     model: s.model,
+    ollamaHost: s.ollamaHost || 'http://localhost:11434',
     hasKey: Boolean(s.apiKey),
     hasYoutubeKey: Boolean(s.youtubeApiKey),
   });
 });
 
 app.post('/api/settings', (req, res) => {
-  const { provider, apiKey, model, youtubeApiKey } = req.body || {};
+  const { provider, apiKey, model, ollamaHost, youtubeApiKey } = req.body || {};
   const current = readJSON('settings.json', {});
   writeJSON('settings.json', {
-    provider: provider || current.provider || 'openai',
+    provider: provider || current.provider || 'ollama',
     apiKey: apiKey === undefined ? current.apiKey : apiKey,
     model: model === undefined ? current.model : model,
+    ollamaHost: ollamaHost === undefined ? current.ollamaHost : ollamaHost,
     youtubeApiKey: youtubeApiKey === undefined ? current.youtubeApiKey : youtubeApiKey,
   });
   res.json({ ok: true });
+});
+
+// Lets the UI show "Ollama not running" instead of a generic fetch error.
+app.get('/api/ollama/health', async (req, res) => {
+  const settings = readJSON('settings.json', {});
+  const host = settings.ollamaHost || 'http://localhost:11434';
+  try {
+    const r = await fetch(`${host}/api/tags`);
+    if (!r.ok) return res.json({ reachable: false });
+    const { models } = await r.json();
+    res.json({ reachable: true, models: (models || []).map((m) => m.name) });
+  } catch {
+    res.json({ reachable: false });
+  }
 });
 
 // --- learning plan (topics) ---
@@ -101,13 +118,14 @@ app.post('/api/generate', async (req, res) => {
   if (!topic) return res.status(404).json({ error: 'topic not found' });
 
   const settings = readJSON('settings.json', {});
-  if (!settings.apiKey) return res.status(400).json({ error: 'Add an API key in Settings first.' });
+  if (needsKey(settings)) return res.status(400).json({ error: 'Add an API key in Settings first (or switch to Ollama).' });
 
   try {
     let markdown = await generateDoc({
       provider: settings.provider,
       apiKey: settings.apiKey,
       model: settings.model,
+      host: settings.ollamaHost,
       topic: topic.title,
       context: topic.context,
     });
@@ -176,7 +194,7 @@ app.post('/api/jobs/:id/tailor', async (req, res) => {
   if (!job) return res.status(404).json({ error: 'job not found' });
 
   const settings = readJSON('settings.json', {});
-  if (!settings.apiKey) return res.status(400).json({ error: 'Add an API key in Settings first.' });
+  if (needsKey(settings)) return res.status(400).json({ error: 'Add an API key in Settings first (or switch to Ollama).' });
   const base = readJSON('resume-base.json', { text: '' });
   if (!base.text.trim()) return res.status(400).json({ error: 'Save a base résumé first.' });
 
@@ -185,6 +203,7 @@ app.post('/api/jobs/:id/tailor', async (req, res) => {
       provider: settings.provider,
       apiKey: settings.apiKey,
       model: settings.model,
+      host: settings.ollamaHost,
       baseResume: base.text,
       jobDescription: job.description,
       company: job.company,
@@ -220,7 +239,7 @@ app.post('/api/ask', async (req, res) => {
   if (!topic) return res.status(404).json({ error: 'topic not found' });
 
   const settings = readJSON('settings.json', {});
-  if (!settings.apiKey) return res.status(400).json({ error: 'Add an API key in Settings first.' });
+  if (needsKey(settings)) return res.status(400).json({ error: 'Add an API key in Settings first (or switch to Ollama).' });
 
   let docMarkdown = '';
   if (topic.docSlug) {
@@ -230,7 +249,7 @@ app.post('/api/ask', async (req, res) => {
 
   try {
     const answer = await askAboutTopic({
-      provider: settings.provider, apiKey: settings.apiKey, model: settings.model,
+      provider: settings.provider, apiKey: settings.apiKey, model: settings.model, host: settings.ollamaHost,
       topicTitle: topic.title, topicContext: topic.context, docMarkdown, question,
     });
     res.json({ answer });

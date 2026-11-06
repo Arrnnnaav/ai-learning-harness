@@ -2,8 +2,9 @@
 
 A free, open-source desktop app for self-taught students: track a learning path, and
 generate deep study docs (prereqs, concepts with code, project ideas, checklists) on
-demand — using **your own** OpenAI or Anthropic API key. No account, no server, no
-tracking. Your plan, goals, and generated docs live only on your machine.
+demand — **free and fully local with [Ollama](https://ollama.com)**, or with your own
+OpenAI/Anthropic API key if you'd rather use a cloud model. No account, no cloud
+backend, no tracking. Your plan, goals, and generated docs live only on your machine.
 
 ![status](https://img.shields.io/badge/status-early-orange) ![license](https://img.shields.io/badge/license-MIT-blue)
 
@@ -34,23 +35,27 @@ the key you provide.
   Deliberately **not** a scraper: hitting LinkedIn/Indeed/etc. without an API violates
   their ToS and breaks constantly. Paste the posting, tailor against it.
 - **Goals** — a flat checklist for longer-term goals.
-- **Bring your own key** — OpenAI/Anthropic for generation, optional YouTube Data API
-  key for real video links. All stored locally only, never sent anywhere but that
-  provider.
+- **Free, local, no account** — pick Ollama in Settings and it's zero cost, nothing
+  leaves your machine. Or bring your own OpenAI/Anthropic key for a cloud model.
+  Optional YouTube Data API key for real video links. All stored locally only, never
+  sent anywhere but the provider you chose.
 - Runs as a desktop app (Electron) or headless (`npm run server`) if you just want the
   API.
 
 ## Download (no coding required)
 
 Grab an installer from [the latest release](https://github.com/Arrnnnaav/ai-learning-harness/releases/latest):
-Windows `.exe`, macOS `.dmg`, or Linux `.AppImage`. Install it, open it, paste an API
-key in Settings when prompted, add a topic.
+Windows `.exe`, macOS `.dmg`, or Linux `.AppImage`. Install it, open it.
 
-You need your own key: free to create at
-[platform.openai.com/api-keys](https://platform.openai.com/api-keys) or
-[console.anthropic.com](https://console.anthropic.com/settings/keys) (both require
-adding a small amount of billing credit to actually make calls — a few cents covers a
-lot of study docs).
+**Fastest free path:** install [Ollama](https://ollama.com), run `ollama pull
+qwen3:4b-instruct`, pick Ollama as the provider in Settings (it's the default). No
+account, no card, nothing leaves your machine.
+
+**Or use a cloud model:** pick OpenAI or Anthropic in Settings and paste an API key —
+free to create at [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+or [console.anthropic.com](https://console.anthropic.com/settings/keys) (both require a
+small amount of billing credit to actually make calls — a few cents covers a lot of
+study docs).
 
 ## Run from source
 
@@ -123,15 +128,21 @@ test/              Self-check tests (`npm test`)
 
 ## Related work
 
-[StudyOS](https://github.com/Arrnnnaav/StudyOS-Hackathon) explores a similar space with
-a fuller feature set — prerequisite curriculum, a Chrome "Point & Ask" extension, org/
-cohort admin, AWS-hosted multi-tenant backend. This project intentionally stays smaller:
-no server-side accounts, no org/role system, no browser extension (yet — see below), no
-cloud infra to run or pay for. Today + Ask + Review here are a single-user, BYO-key take
-on StudyOS's same core loop. Not ported, on purpose: multi-tenant orgs (one student per
-install, not a fit), a hosted curriculum (you define your own topics/prereqs instead), a
-Chrome extension (real scope — selecting page text, resolving DOM targets, a MV3
-manifest; worth doing later, not for a first pass).
+This project deliberately stays single-user and local: no accounts, no org/role system,
+no cloud backend to run or pay for — install it and it works, offline if you're on
+Ollama. Today + Ask + Review (and the local-model-first provider setup) take cues from
+two other local projects, scaled down to fit that constraint:
+
+- A fuller "Point & Ask" idea — circle a region of a page/PDF/app and ask about exactly
+  that, not the whole page — exists as its own standalone project with a browser
+  extension and a DOM/crop resolver. That's real scope on its own (anchor resolution,
+  screen capture, extension packaging) and isn't ported here; this app's Ask is
+  text-based and scoped to one topic's own doc, which covers the common case without the
+  extension.
+- A fuller curriculum/review product explores prerequisite tracking and spaced review
+  with a hosted multi-tenant backend and org/cohort admin. Not a fit for a single-student
+  BYO-key tool — Today/Review here are the same core loop (what's next, what's due)
+  without any of that infrastructure.
 
 ## Contributing
 

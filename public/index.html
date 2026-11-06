@@ -8,29 +8,35 @@
 <body>
 <header>
   <h1>AI Learning Harness</h1>
-  <p class="tagline">Your own AI study-plan generator. Bring your own API key.</p>
+  <p class="tagline">Your own AI study-plan generator. Free with local Ollama, or bring your own API key.</p>
 </header>
 
 <main>
   <p id="welcome-banner" class="banner hidden">
-    👋 First time here — this app needs your own OpenAI or Anthropic API key to generate anything.
-    Get one from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a>
-    or <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>,
-    paste it in Settings below, then add a topic.
+    👋 First time here — pick Ollama below for a free local model (needs
+    <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a> installed + a model pulled, e.g.
+    <code>ollama pull qwen3:4b-instruct</code>), or pick OpenAI/Anthropic and paste an API key from
+    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a> or
+    <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+    Then add a topic.
   </p>
   <section id="settings-section">
     <h2>Settings</h2>
     <form id="settings-form">
       <label>Provider
         <select id="provider">
+          <option value="ollama">Ollama (free, local, no account)</option>
           <option value="openai">OpenAI</option>
           <option value="anthropic">Anthropic</option>
         </select>
       </label>
       <label>Model <small>(optional, provider default used if blank)</small>
-        <input id="model" type="text" placeholder="e.g. gpt-4o-mini" />
+        <input id="model" type="text" placeholder="e.g. gpt-4o-mini / qwen3:4b-instruct" />
       </label>
-      <label>API Key
+      <label id="ollamaHost-field" class="hidden">Ollama host
+        <input id="ollamaHost" type="text" placeholder="http://localhost:11434" />
+      </label>
+      <label id="apiKey-field">API Key
         <input id="apiKey" type="password" placeholder="sk-..." />
       </label>
       <label>YouTube API Key <small>(optional — real video links instead of search queries)</small>
@@ -41,6 +47,7 @@
         Sign in with OpenAI (coming soon)
       </button>
       <p id="settings-status"></p>
+      <p id="ollama-status" class="hint hidden"></p>
     </form>
   </section>
 
