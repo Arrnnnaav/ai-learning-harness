@@ -36,6 +36,7 @@ async function loadSettings() {
   updateProviderFields();
   const bits = [s.hasKey ? 'API key saved' : 'No API key set yet'];
   bits.push(s.hasYoutubeKey ? 'YouTube key saved (real video links on)' : 'No YouTube key (video sections will be search queries)');
+  bits.push(s.hasTavilyKey ? 'Tavily key saved (better Research search)' : 'No Tavily key (Research mode still works via free DuckDuckGo search)');
   document.getElementById('settings-status').textContent = bits.join(' · ');
 
   const ollamaOk = s.provider === 'ollama' ? await checkOllama() : false;
@@ -49,6 +50,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
   const ollamaHost = document.getElementById('ollamaHost').value;
   const apiKey = document.getElementById('apiKey').value;
   const youtubeApiKey = document.getElementById('youtubeApiKey').value;
+  const tavilyApiKey = document.getElementById('tavilyApiKey').value;
   await api('/api/settings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -56,10 +58,12 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
       provider, model, ollamaHost,
       ...(apiKey ? { apiKey } : {}),
       ...(youtubeApiKey ? { youtubeApiKey } : {}),
+      ...(tavilyApiKey ? { tavilyApiKey } : {}),
     }),
   });
   document.getElementById('apiKey').value = '';
   document.getElementById('youtubeApiKey').value = '';
+  document.getElementById('tavilyApiKey').value = '';
   loadSettings();
 });
 
@@ -156,6 +160,7 @@ function topicRow(t) {
     </div>
     <div class="ask-box hidden" data-ask-for="${t.id}">
       <input type="text" class="ask-question" placeholder="Ask something about ${t.title}…" />
+      <label class="ask-research"><input type="checkbox" class="ask-research-toggle" checked /> Verify with sources</label>
       <button data-action="ask-submit" data-id="${t.id}">Ask</button>
       <div class="ask-answer"></div>
     </div>
@@ -224,17 +229,23 @@ document.getElementById('topic-list').addEventListener('click', async (e) => {
   if (e.target.dataset.action === 'ask-submit') {
     const box = document.querySelector(`.ask-box[data-ask-for="${id}"]`);
     const question = box.querySelector('.ask-question').value;
+    const research = box.querySelector('.ask-research-toggle').checked;
     const answerEl = box.querySelector('.ask-answer');
     if (!question.trim()) return;
-    answerEl.textContent = 'Thinking…';
+    answerEl.textContent = research ? 'Searching and thinking…' : 'Thinking…';
     try {
-      const { answer } = await api('/api/ask', {
+      const { answer, sources } = await api('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topicId: id, question }),
+        body: JSON.stringify({ topicId: id, question, research }),
       });
-      const topic = allTopics.find((t) => t.id === id);
-      answerEl.innerHTML = `<p>${answer.replace(/\n/g, '<br>')}</p><button data-action="save-review" data-id="${id}" data-question="${encodeURIComponent(question)}" data-answer="${encodeURIComponent(answer)}">Save to Review</button>`;
+      const sourcesHtml = (sources || []).length
+        ? `<ul class="ask-sources">${sources.map((s) => `<li>[${s.id}] <a href="${s.url}" target="_blank" rel="noopener">${s.title}</a></li>`).join('')}</ul>`
+        : '';
+      const fullAnswer = (sources || []).length
+        ? `${answer}\n\nSources:\n${sources.map((s) => `[${s.id}] ${s.title} — ${s.url}`).join('\n')}`
+        : answer;
+      answerEl.innerHTML = `<p>${answer.replace(/\n/g, '<br>')}</p>${sourcesHtml}<button data-action="save-review" data-id="${id}" data-question="${encodeURIComponent(question)}" data-answer="${encodeURIComponent(fullAnswer)}">Save to Review</button>`;
     } catch (err) {
       answerEl.textContent = err.message;
     }

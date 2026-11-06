@@ -18,6 +18,8 @@ textarea { width: 100%; resize: vertical; }
 .ask-box { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0 28px; align-items: flex-start; }
 .ask-box.hidden { display: none; }
 .ask-answer { flex-basis: 100%; background: #0f1115; border-radius: 6px; padding: 8px 10px; font-size: .9rem; }
+.ask-research { display: flex; align-items: center; gap: 4px; font-size: .85rem; color: #9aa0a6; flex-direction: row; }
+.ask-sources { list-style: none; padding: 0; margin: 6px 0 0; font-size: .8rem; color: #9aa0a6; }
 .review-row { border-top: 1px solid #2a2e37; padding: 10px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .review-q { flex: 1 1 100%; }
 .review-a { flex-basis: 100%; background: #0f1115; border-radius: 6px; padding: 8px 10px; }

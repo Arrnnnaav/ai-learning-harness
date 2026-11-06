@@ -28,11 +28,12 @@ app.get('/api/settings', (req, res) => {
     ollamaHost: s.ollamaHost || 'http://localhost:11434',
     hasKey: Boolean(s.apiKey),
     hasYoutubeKey: Boolean(s.youtubeApiKey),
+    hasTavilyKey: Boolean(s.tavilyApiKey),
   });
 });
 
 app.post('/api/settings', (req, res) => {
-  const { provider, apiKey, model, ollamaHost, youtubeApiKey } = req.body || {};
+  const { provider, apiKey, model, ollamaHost, youtubeApiKey, tavilyApiKey } = req.body || {};
   const current = readJSON('settings.json', {});
   writeJSON('settings.json', {
     provider: provider || current.provider || 'ollama',
@@ -40,6 +41,7 @@ app.post('/api/settings', (req, res) => {
     model: model === undefined ? current.model : model,
     ollamaHost: ollamaHost === undefined ? current.ollamaHost : ollamaHost,
     youtubeApiKey: youtubeApiKey === undefined ? current.youtubeApiKey : youtubeApiKey,
+    tavilyApiKey: tavilyApiKey === undefined ? current.tavilyApiKey : tavilyApiKey,
   });
   res.json({ ok: true });
 });
@@ -232,7 +234,7 @@ app.get('/api/resumes/:slug.docx', (req, res) => {
 
 // --- ask about a topic (StudyOS's "Point & Ask", minus the browser extension) ---
 app.post('/api/ask', async (req, res) => {
-  const { topicId, question } = req.body || {};
+  const { topicId, question, research } = req.body || {};
   if (!question || !question.trim()) return res.status(400).json({ error: 'question required' });
   const plan = readJSON('plan.json', { topics: [] });
   const topic = plan.topics.find((t) => t.id === topicId);
@@ -248,11 +250,12 @@ app.post('/api/ask', async (req, res) => {
   }
 
   try {
-    const answer = await askAboutTopic({
+    const result = await askAboutTopic({
       provider: settings.provider, apiKey: settings.apiKey, model: settings.model, host: settings.ollamaHost,
       topicTitle: topic.title, topicContext: topic.context, docMarkdown, question,
+      research: Boolean(research), tavilyApiKey: settings.tavilyApiKey,
     });
-    res.json({ answer });
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
