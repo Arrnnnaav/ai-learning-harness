@@ -1,6 +1,6 @@
 {
   "name": "ai-learning-harness",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Open-source AI study-plan harness: track a learning path, auto-generate study docs with your own LLM key, run it as a desktop app.",
   "main": "main.js",
   "license": "MIT",

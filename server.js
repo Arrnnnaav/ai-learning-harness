@@ -6,6 +6,8 @@ const { generateDoc } = require('./lib/docgen');
 const { markdownToDocxBuffer } = require('./lib/mdToDocx');
 const { resolveVideoLinks } = require('./lib/youtube');
 const { tailorResume } = require('./lib/resume');
+const { askAboutTopic } = require('./lib/ask');
+const { newCard, gradeCard } = require('./lib/srs');
 const fs = require('fs');
 
 const app = express();
@@ -45,13 +47,34 @@ app.get('/api/plan', (req, res) => {
 });
 
 app.post('/api/plan/topics', (req, res) => {
-  const { title, context } = req.body || {};
+  const { title, context, prereqs } = req.body || {};
   if (!title) return res.status(400).json({ error: 'title required' });
   const plan = readJSON('plan.json', { topics: [] });
-  const topic = { id: crypto.randomUUID(), title, context: context || '', status: 'not_started', docSlug: null };
+  const topic = {
+    id: crypto.randomUUID(), title, context: context || '', status: 'not_started', docSlug: null,
+    prereqs: Array.isArray(prereqs) ? prereqs : [], done: false,
+  };
   plan.topics.push(topic);
   writeJSON('plan.json', plan);
   res.json(topic);
+});
+
+// Prereq-aware "what to study today": topics not yet done, whose prereqs are
+// all done, ranked with fewer/already-satisfied prereqs first — plus any
+// review cards due now. Mirrors StudyOS's "Today" view, without its
+// curriculum/org machinery: prereqs here are just other topics you added.
+app.get('/api/today', (req, res) => {
+  const plan = readJSON('plan.json', { topics: [] });
+  const doneIds = new Set(plan.topics.filter((t) => t.done).map((t) => t.id));
+  const ready = plan.topics
+    .filter((t) => !t.done && (t.prereqs || []).every((p) => doneIds.has(p)))
+    .sort((a, b) => (a.prereqs || []).length - (b.prereqs || []).length);
+
+  const reviews = readJSON('reviews.json', { cards: [] });
+  const now = Date.now();
+  const dueReviews = reviews.cards.filter((c) => c.due <= now);
+
+  res.json({ nextTopics: ready.slice(0, 3), dueReviewCount: dueReviews.length });
 });
 
 app.patch('/api/plan/topics/:id', (req, res) => {
@@ -186,6 +209,70 @@ app.get('/api/resumes/:slug.docx', (req, res) => {
   const f = path.join(filePath('resumes'), `${req.params.slug}.docx`);
   if (!fs.existsSync(f)) return res.status(404).end();
   res.download(f);
+});
+
+// --- ask about a topic (StudyOS's "Point & Ask", minus the browser extension) ---
+app.post('/api/ask', async (req, res) => {
+  const { topicId, question } = req.body || {};
+  if (!question || !question.trim()) return res.status(400).json({ error: 'question required' });
+  const plan = readJSON('plan.json', { topics: [] });
+  const topic = plan.topics.find((t) => t.id === topicId);
+  if (!topic) return res.status(404).json({ error: 'topic not found' });
+
+  const settings = readJSON('settings.json', {});
+  if (!settings.apiKey) return res.status(400).json({ error: 'Add an API key in Settings first.' });
+
+  let docMarkdown = '';
+  if (topic.docSlug) {
+    const f = path.join(filePath('docs'), `${topic.docSlug}.md`);
+    if (fs.existsSync(f)) docMarkdown = fs.readFileSync(f, 'utf8');
+  }
+
+  try {
+    const answer = await askAboutTopic({
+      provider: settings.provider, apiKey: settings.apiKey, model: settings.model,
+      topicTitle: topic.title, topicContext: topic.context, docMarkdown, question,
+    });
+    res.json({ answer });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- spaced review of saved question/answer pairs ---
+app.get('/api/reviews', (req, res) => {
+  const { cards } = readJSON('reviews.json', { cards: [] });
+  const due = req.query.due === 'true';
+  const now = Date.now();
+  res.json({ cards: due ? cards.filter((c) => c.due <= now) : cards });
+});
+
+app.post('/api/reviews', (req, res) => {
+  const { topicId, topicTitle, question, answer } = req.body || {};
+  if (!question || !answer) return res.status(400).json({ error: 'question and answer required' });
+  const data = readJSON('reviews.json', { cards: [] });
+  const card = { id: crypto.randomUUID(), topicId: topicId || null, topicTitle: topicTitle || '', question, answer, ...newCard() };
+  data.cards.push(card);
+  writeJSON('reviews.json', data);
+  res.json(card);
+});
+
+app.post('/api/reviews/:id/grade', (req, res) => {
+  const { grade } = req.body || {};
+  if (grade !== 'again' && grade !== 'good') return res.status(400).json({ error: 'grade must be "again" or "good"' });
+  const data = readJSON('reviews.json', { cards: [] });
+  const card = data.cards.find((c) => c.id === req.params.id);
+  if (!card) return res.status(404).json({ error: 'not found' });
+  Object.assign(card, gradeCard(card, grade));
+  writeJSON('reviews.json', data);
+  res.json(card);
+});
+
+app.delete('/api/reviews/:id', (req, res) => {
+  const data = readJSON('reviews.json', { cards: [] });
+  data.cards = data.cards.filter((c) => c.id !== req.params.id);
+  writeJSON('reviews.json', data);
+  res.json({ ok: true });
 });
 
 // --- goals (flat checklist) ---

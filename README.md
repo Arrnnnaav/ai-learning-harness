@@ -19,6 +19,13 @@ the key you provide.
 - **Topics** — add any topic, generate a full study doc for it (concepts + code +
   project ideas + checklist), download as `.docx`. With a YouTube API key set, the
   "Where to Watch" section links real, verified videos instead of search queries.
+- **Today** — a prereq-aware view: mark a topic's prereqs when you add it, and Today
+  surfaces only topics that are actually unblocked, instead of one flat list.
+- **Ask + Review** — ask a question about any topic (grounded in that topic's own
+  generated doc, if it has one), and save a good answer into a spaced-repetition review
+  queue (SM-2-lite: Again / Good). Ported from StudyOS's "Point & Ask → Save to Review"
+  idea, minus its browser extension and curriculum backend — here it's just you, your
+  topics, and your own key.
 - **Résumé tailoring** — paste your real résumé once, paste a job description, get a
   tailored résumé + honest fit/gap notes, as `.docx`. The model only reorders/rephrases
   what's in your base résumé — it's instructed never to invent employers, titles, or
@@ -104,11 +111,27 @@ lib/llm.js         OpenAI / Anthropic chat-completion client
 lib/docgen.js      Study-doc prompt + generation
 lib/youtube.js     YouTube Data API search, resolves video-search-query lines to real links
 lib/resume.js      Résumé tailoring prompt (grounded in the user's own base résumé)
+lib/ask.js         Grounded Q&A about a topic (used by Today/Ask)
+lib/srs.js         Minimal SM-2-style spaced-repetition scheduler (used by Review)
 lib/mdToDocx.js    Markdown -> .docx (no Python/Pandoc dependency)
-lib/store.js       Local JSON persistence (Electron userData or ~/.ai-learning-harness)
+lib/store.js       Local JSON persistence (Electron userData, ~/.ai-learning-harness,
+                     or AI_LEARNING_HARNESS_DATA_DIR override — tests use this to avoid
+                     touching your real data)
 public/            Frontend (vanilla JS, no build step)
 test/              Self-check tests (`npm test`)
 ```
+
+## Related work
+
+[StudyOS](https://github.com/Arrnnnaav/StudyOS-Hackathon) explores a similar space with
+a fuller feature set — prerequisite curriculum, a Chrome "Point & Ask" extension, org/
+cohort admin, AWS-hosted multi-tenant backend. This project intentionally stays smaller:
+no server-side accounts, no org/role system, no browser extension (yet — see below), no
+cloud infra to run or pay for. Today + Ask + Review here are a single-user, BYO-key take
+on StudyOS's same core loop. Not ported, on purpose: multi-tenant orgs (one student per
+install, not a fit), a hosted curriculum (you define your own topics/prereqs instead), a
+Chrome extension (real scope — selecting page text, resolving DOM targets, a MV3
+manifest; worth doing later, not for a first pass).
 
 ## Contributing
 

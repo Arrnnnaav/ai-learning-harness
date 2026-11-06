@@ -109,38 +109,60 @@ document.getElementById('job-list').addEventListener('click', async (e) => {
   }
 });
 
+let allTopics = [];
+
 function topicRow(t) {
   const li = document.createElement('li');
   li.className = 'topic-row';
+  const prereqNames = (t.prereqs || []).map((id) => allTopics.find((x) => x.id === id)?.title).filter(Boolean);
   li.innerHTML = `
-    <span class="topic-title">${t.title}</span>
-    <span class="topic-status">${t.status}</span>
-    <button data-action="generate" data-id="${t.id}">${t.status === 'generated' ? 'Regenerate' : 'Generate doc'}</button>
-    ${t.docSlug ? `<a href="/api/docs/${t.docSlug}.docx" download>Download .docx</a>` : ''}
-    <button data-action="delete" data-id="${t.id}">Delete</button>
+    <div class="topic-main">
+      <label class="topic-done"><input type="checkbox" data-action="done" data-id="${t.id}" ${t.done ? 'checked' : ''}/></label>
+      <span class="topic-title">${t.title}</span>
+      <span class="topic-status">${t.status}${prereqNames.length ? ` · needs: ${prereqNames.join(', ')}` : ''}</span>
+      <button data-action="generate" data-id="${t.id}">${t.status === 'generated' ? 'Regenerate' : 'Generate doc'}</button>
+      ${t.docSlug ? `<a href="/api/docs/${t.docSlug}.docx" download>Download .docx</a>` : ''}
+      <button data-action="ask-toggle" data-id="${t.id}">Ask</button>
+      <button data-action="delete" data-id="${t.id}">Delete</button>
+    </div>
+    <div class="ask-box hidden" data-ask-for="${t.id}">
+      <input type="text" class="ask-question" placeholder="Ask something about ${t.title}…" />
+      <button data-action="ask-submit" data-id="${t.id}">Ask</button>
+      <div class="ask-answer"></div>
+    </div>
   `;
   return li;
 }
 
 async function loadTopics() {
   const { topics } = await api('/api/plan');
+  allTopics = topics;
   const list = document.getElementById('topic-list');
   list.innerHTML = '';
   if (topics.length === 0) {
     list.innerHTML = '<li class="empty">No topics yet — add one above to generate your first study doc.</li>';
-    return;
+  } else {
+    topics.forEach((t) => list.appendChild(topicRow(t)));
   }
-  topics.forEach((t) => list.appendChild(topicRow(t)));
+
+  const picker = document.getElementById('prereq-picker');
+  picker.innerHTML = topics.length
+    ? `<span class="hint">Prereqs (optional):</span>` + topics.map((t) =>
+        `<label class="prereq-item"><input type="checkbox" value="${t.id}" /> ${t.title}</label>`).join('')
+    : '';
+
+  loadToday();
 }
 
 document.getElementById('topic-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const title = document.getElementById('topic-title').value;
   const context = document.getElementById('topic-context').value;
+  const prereqs = [...document.querySelectorAll('#prereq-picker input:checked')].map((i) => i.value);
   await api('/api/plan/topics', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, context }),
+    body: JSON.stringify({ title, context, prereqs }),
   });
   e.target.reset();
   loadTopics();
@@ -166,6 +188,114 @@ document.getElementById('topic-list').addEventListener('click', async (e) => {
       alert(err.message);
     }
     loadTopics();
+  }
+  if (e.target.dataset.action === 'ask-toggle') {
+    document.querySelector(`.ask-box[data-ask-for="${id}"]`).classList.toggle('hidden');
+  }
+  if (e.target.dataset.action === 'ask-submit') {
+    const box = document.querySelector(`.ask-box[data-ask-for="${id}"]`);
+    const question = box.querySelector('.ask-question').value;
+    const answerEl = box.querySelector('.ask-answer');
+    if (!question.trim()) return;
+    answerEl.textContent = 'Thinking…';
+    try {
+      const { answer } = await api('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topicId: id, question }),
+      });
+      const topic = allTopics.find((t) => t.id === id);
+      answerEl.innerHTML = `<p>${answer.replace(/\n/g, '<br>')}</p><button data-action="save-review" data-id="${id}" data-question="${encodeURIComponent(question)}" data-answer="${encodeURIComponent(answer)}">Save to Review</button>`;
+    } catch (err) {
+      answerEl.textContent = err.message;
+    }
+  }
+});
+
+document.getElementById('topic-list').addEventListener('change', async (e) => {
+  if (e.target.dataset.action === 'done') {
+    await api(`/api/plan/topics/${e.target.dataset.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ done: e.target.checked }),
+    });
+    loadTopics();
+  }
+});
+
+document.getElementById('topic-list').addEventListener('click', async (e) => {
+  if (e.target.dataset.action !== 'save-review') return;
+  const topic = allTopics.find((t) => t.id === e.target.dataset.id);
+  await api('/api/reviews', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topicId: topic?.id, topicTitle: topic?.title,
+      question: decodeURIComponent(e.target.dataset.question),
+      answer: decodeURIComponent(e.target.dataset.answer),
+    }),
+  });
+  e.target.textContent = 'Saved ✓';
+  e.target.disabled = true;
+  loadReviews();
+});
+
+// --- today ---
+async function loadToday() {
+  const { nextTopics, dueReviewCount } = await api('/api/today');
+  const el = document.getElementById('today-summary');
+  const parts = [];
+  parts.push(nextTopics.length
+    ? `Next up: ${nextTopics.map((t) => t.title).join(', ')}`
+    : 'No topic is prereq-ready yet — add one with no prereqs, or mark a prereq done.');
+  parts.push(dueReviewCount > 0 ? `${dueReviewCount} review${dueReviewCount === 1 ? '' : 's'} due.` : 'No reviews due.');
+  el.textContent = parts.join(' · ');
+}
+
+// --- review ---
+function reviewRow(c) {
+  const li = document.createElement('li');
+  li.className = 'review-row';
+  li.innerHTML = `
+    <div class="review-q">${c.question}${c.topicTitle ? ` <span class="hint">(${c.topicTitle})</span>` : ''}</div>
+    <button data-action="reveal" data-id="${c.id}">Show answer</button>
+    <div class="review-a hidden">${c.answer.replace(/\n/g, '<br>')}</div>
+    <div class="review-grade hidden">
+      <button data-action="grade" data-id="${c.id}" data-grade="again">Again</button>
+      <button data-action="grade" data-id="${c.id}" data-grade="good">Good</button>
+    </div>
+  `;
+  return li;
+}
+
+async function loadReviews() {
+  const { cards } = await api('/api/reviews?due=true');
+  const list = document.getElementById('review-list');
+  list.innerHTML = '';
+  if (cards.length === 0) {
+    list.innerHTML = '<li class="empty">Nothing due. Ask a question on a topic and save a good answer to build this up.</li>';
+    return;
+  }
+  cards.forEach((c) => list.appendChild(reviewRow(c)));
+}
+
+document.getElementById('review-list').addEventListener('click', async (e) => {
+  const id = e.target.dataset.id;
+  if (!id) return;
+  const row = e.target.closest('.review-row');
+  if (e.target.dataset.action === 'reveal') {
+    row.querySelector('.review-a').classList.remove('hidden');
+    row.querySelector('.review-grade').classList.remove('hidden');
+    e.target.classList.add('hidden');
+  }
+  if (e.target.dataset.action === 'grade') {
+    await api(`/api/reviews/${id}/grade`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grade: e.target.dataset.grade }),
+    });
+    row.remove();
+    loadToday();
   }
 });
 
@@ -209,6 +339,7 @@ document.getElementById('goal-list').addEventListener('change', async (e) => {
 
 loadSettings();
 loadTopics();
+loadReviews();
 loadResumeBase();
 loadJobs();
 loadGoals();
