@@ -1,12 +1,19 @@
 # AI Learning Harness
 
+**Track your AI/ML learning plan and generate deep study docs, cited Q&A, and
+spaced-repetition review — free and fully local, no account, no cloud backend.**
+
+<!-- TODO: demo.gif — record a 15-20s screen capture (add topic → generate doc →
+     Ask with Research mode → Review) and drop it here as `docs/demo.gif` -->
+<!-- ![demo](docs/demo.gif) -->
+
+![status](https://img.shields.io/badge/status-early-orange) ![license](https://img.shields.io/badge/license-MIT-blue) ![CI](https://github.com/Arrnnnaav/ai-learning-harness/actions/workflows/ci.yml/badge.svg)
+
 A free, open-source desktop app for self-taught students: track a learning path, and
 generate deep study docs (prereqs, concepts with code, project ideas, checklists) on
 demand — **free and fully local with [Ollama](https://ollama.com)**, or with your own
 OpenAI/Anthropic API key if you'd rather use a cloud model. No account, no cloud
 backend, no tracking. Your plan, goals, and generated docs live only on your machine.
-
-![status](https://img.shields.io/badge/status-early-orange) ![license](https://img.shields.io/badge/license-MIT-blue)
 
 ## Why
 
@@ -66,6 +73,14 @@ small amount of billing credit to actually make calls — a few cents covers a l
 study docs).
 
 ## Run from source
+
+One command (Node 18+):
+
+```bash
+git clone https://github.com/Arrnnnaav/ai-learning-harness.git && cd ai-learning-harness && npm install && npm start
+```
+
+Or step by step:
 
 ```bash
 git clone https://github.com/Arrnnnaav/ai-learning-harness.git
