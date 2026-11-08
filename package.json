@@ -6,7 +6,10 @@
   "license": "MIT",
   "author": "Arnav",
   "repository": "github:Arrnnnaav/ai-learning-harness",
+  "bugs": "https://github.com/Arrnnnaav/ai-learning-harness/issues",
   "homepage": "https://github.com/Arrnnnaav/ai-learning-harness",
+  "keywords": ["ai", "learning", "ollama", "electron", "self-study", "education", "spaced-repetition", "resume"],
+  "engines": { "node": ">=18" },
   "scripts": {
     "start": "electron .",
     "server": "node server.js",
